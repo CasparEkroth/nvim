@@ -6,8 +6,13 @@ NVIM_CONFIG_DIR="$HOME/.config/nvim"
 
 mkdir -p "$NVIM_CONFIG_DIR"
 
-cp "$SCRIPT_DIR/init.lua" "$NVIM_CONFIG_DIR/init.lua"
-cp "$SCRIPT_DIR/lazy-lock.json" "$NVIM_CONFIG_DIR/lazy-lock.json"
+# Sync the full modular config (preserves structure, removes stale files)
+rsync -a --delete \
+  --exclude '.git' \
+  --exclude '.gitignore' \
+  --exclude 'setup' \
+  --exclude '.DS_Store' \
+  "$SCRIPT_DIR/" "$NVIM_CONFIG_DIR/"
 
 echo "nvim config installed to $NVIM_CONFIG_DIR"
 echo "Open nvim to let lazy.nvim finish plugin setup."
