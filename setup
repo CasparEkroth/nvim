@@ -12,7 +12,14 @@ rsync -a --delete \
   --exclude '.gitignore' \
   --exclude 'setup' \
   --exclude '.DS_Store' \
+  --exclude '.clang-format' \
   "$SCRIPT_DIR/" "$NVIM_CONFIG_DIR/"
 
+# clang-format walks upward from any C/C++ file toward the filesystem root
+# looking for .clang-format, so installing one at $HOME applies it to every
+# project (clangd's --fallback-style flag is unreliable, so we don't use it)
+cp "$SCRIPT_DIR/.clang-format" "$HOME/.clang-format"
+
 echo "nvim config installed to $NVIM_CONFIG_DIR"
+echo "clang-format style (4-space indent) installed to $HOME/.clang-format"
 echo "Open nvim to let lazy.nvim finish plugin setup."

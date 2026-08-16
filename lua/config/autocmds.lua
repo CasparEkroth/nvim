@@ -1,8 +1,8 @@
 -- Autocommands
 
--- Format Python on save using ruff / attached LSP
+-- Format on save via attached LSP (ruff for Python, clangd for C/C++)
 vim.api.nvim_create_autocmd("BufWritePre", {
-  pattern = "*.py",
+  pattern = { "*.py", "*.c", "*.h", "*.cpp", "*.hpp", "*.cc", "*.cxx", "*.hh" },
   callback = function()
     vim.lsp.buf.format({ async = false })
   end,

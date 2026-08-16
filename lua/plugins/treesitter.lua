@@ -13,6 +13,7 @@ return {
     -- markdown_inline is required by markdown injections / render-markdown.nvim
     require("nvim-treesitter").install({
       "python", "lua", "vim", "vimdoc",
+      "c", "cpp", "cmake",
       "json", "yaml", "toml",
       "markdown", "markdown_inline",
       "bash",
@@ -29,7 +30,8 @@ return {
     -- Optional: treesitter-based indentation (experimental on main)
     vim.api.nvim_create_autocmd("FileType", {
       pattern = {
-        "python", "lua", "vim", "json", "yaml", "toml", "markdown", "bash",
+        "python", "lua", "vim", "c", "cpp", "cmake",
+        "json", "yaml", "toml", "markdown", "bash",
       },
       callback = function()
         vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"

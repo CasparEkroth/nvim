@@ -20,6 +20,32 @@ vim.lsp.config["ruff"] = {
 }
 vim.lsp.enable("ruff")
 
+-- C/C++: clangd (completion, go-to-def, diagnostics, formatting)
+local clangd_capabilities = vim.deepcopy(capabilities)
+clangd_capabilities.offsetEncoding = { "utf-16" }
+
+vim.lsp.config["clangd"] = {
+  cmd = {
+    "clangd",
+    "--background-index",
+    "--clang-tidy",
+    "--header-insertion=iwyu",
+    "--completion-style=detailed",
+    "--function-arg-placeholders=true",
+  },
+  filetypes = { "c", "cpp", "objc", "objcpp", "cuda" },
+  root_markers = {
+    "compile_commands.json",
+    "compile_flags.txt",
+    ".clangd",
+    "CMakeLists.txt",
+    "Makefile",
+    ".git",
+  },
+  capabilities = clangd_capabilities,
+}
+vim.lsp.enable("clangd")
+
 -- Lua: for editing this config itself
 vim.lsp.config["lua_ls"] = {
   cmd = { "lua-language-server" },
