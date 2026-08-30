@@ -3,8 +3,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NVIM_CONFIG_DIR="$HOME/.config/nvim"
+NVIM_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nvim"
+NVIM_VENV="$NVIM_DATA_DIR/venv"
 
 mkdir -p "$NVIM_CONFIG_DIR"
+mkdir -p "$NVIM_DATA_DIR"
 
 # Sync the full modular config (preserves structure, removes stale files)
 rsync -a --delete \
@@ -20,6 +23,81 @@ rsync -a --delete \
 # project (clangd's --fallback-style flag is unreliable, so we don't use it)
 cp "$SCRIPT_DIR/.clang-format" "$HOME/.clang-format"
 
+# ---------------------------------------------------------------------------
+# Python host env for molten-nvim / jupytext (pynvim remote plugin + kernels)
+# Prefer a real 3.10+ interpreter (Homebrew on Mac); avoid macOS system 3.9.
+# ---------------------------------------------------------------------------
+pick_python() {
+  local c
+  for c in \
+    "${MOLTEN_PYTHON:-}" \
+    python3.14 python3.13 python3.12 python3.11 python3.10 \
+    /opt/homebrew/bin/python3 \
+    /usr/local/bin/python3 \
+    python3
+  do
+    [[ -z "$c" ]] && continue
+    if command -v "$c" >/dev/null 2>&1; then
+      if "$c" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' 2>/dev/null; then
+        command -v "$c"
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
+
+if PY="$(pick_python)"; then
+  if [[ ! -x "$NVIM_VENV/bin/python" && ! -x "$NVIM_VENV/Scripts/python.exe" ]]; then
+    echo "Creating Neovim Python venv at $NVIM_VENV (interpreter: $PY)"
+    "$PY" -m venv "$NVIM_VENV"
+  else
+    echo "Neovim Python venv already exists at $NVIM_VENV"
+  fi
+
+  if [[ -x "$NVIM_VENV/bin/python" ]]; then
+    VENV_PY="$NVIM_VENV/bin/python"
+    VENV_PIP="$NVIM_VENV/bin/pip"
+  else
+    VENV_PY="$NVIM_VENV/Scripts/python.exe"
+    VENV_PIP="$NVIM_VENV/Scripts/pip.exe"
+  fi
+
+  "$VENV_PIP" install --upgrade pip >/dev/null
+  "$VENV_PIP" install --upgrade \
+    pynvim \
+    jupyter_client \
+    ipykernel \
+    jupytext \
+    nbformat \
+    pillow
+
+  # Register a default kernel so :MoltenInit has something to attach to
+  "$VENV_PY" -m ipykernel install --user --name=nvim --display-name="Neovim (molten)" >/dev/null 2>&1 || true
+
+  echo "Python host packages installed for molten/jupytext."
+  echo "  vim.g.python3_host_prog -> $VENV_PY"
+else
+  echo "WARNING: No Python >= 3.10 found. Install one, then re-run ./setup." >&2
+  echo "  molten-nvim needs: pynvim jupyter_client ipykernel jupytext" >&2
+fi
+
+# ImageMagick is required by image.nvim (magick_cli processor) for plot rendering
+if ! command -v magick >/dev/null 2>&1 && ! command -v convert >/dev/null 2>&1; then
+  echo "NOTE: ImageMagick not found. Inline plot rendering needs it:"
+  echo "  macOS:  brew install imagemagick"
+  echo "  Ubuntu: sudo apt install imagemagick"
+fi
+
+echo
 echo "nvim config installed to $NVIM_CONFIG_DIR"
 echo "clang-format style (4-space indent) installed to $HOME/.clang-format"
-echo "Open nvim to let lazy.nvim finish plugin setup."
+echo "Open nvim to let lazy.nvim finish plugin setup, then run :UpdateRemotePlugins once if needed."
+echo
+echo "Jupyter / image notes:"
+echo "  - Open .ipynb files normally; jupytext.nvim converts them to hydrogen (# %%) python."
+echo "  - Keymaps (leader = space): ji init, jc run cell, jn run+next, jv visual,"
+echo "    jo open output, jh hide output, jr restart kernel."
+echo "  - Inline images need Kitty/Ghostty/WezTerm (Kitty graphics protocol)."
+echo "    Apple Terminal cannot render them; molten text output still works."
+echo "  - WSL: image.nvim is limited — install ueberzugpp under WSLg, or use text-only output."
