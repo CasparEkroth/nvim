@@ -179,6 +179,23 @@ local function ipynb_is_open(ipynb_path)
   return false
 end
 
+-- Neovim's 'hidden' option defaults ON, so leaving a notebook's last window (closing the
+-- split, switching buffers, quitting) normally just hides the buffer instead of unloading
+-- it — and jupytext's sidecar cleanup only runs on BufUnload. That left the .py sidecar
+-- sitting there until nvim fully exited. Force ipynb buffers to unload (not hide) the
+-- instant they're no longer shown anywhere, so cleanup fires right when you "close" one.
+-- Trade-off: if you switch away from a notebook with an attached Molten kernel and back,
+-- the buffer's kernel attachment is lost (the kernel process itself keeps running) — just
+-- press <leader>ji again to reattach.
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "*",
+  callback = function(ev)
+    if vim.fn.fnamemodify(vim.api.nvim_buf_get_name(ev.buf), ":e") == "ipynb" then
+      vim.bo[ev.buf].bufhidden = "unload"
+    end
+  end,
+})
+
 vim.api.nvim_create_user_command("JupytextCleanup", function(cmd_opts)
   local dir = cmd_opts.args ~= "" and cmd_opts.args or vim.fn.expand("%:p:h")
   if dir == "" then
