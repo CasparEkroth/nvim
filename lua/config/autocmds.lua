@@ -8,6 +8,20 @@ vim.api.nvim_create_autocmd("BufWritePre", {
   end,
 })
 
+-- Dart/Flutter style guide uses 2-space indent, not the global 4.
+-- Registered here (not inside flutter-tools' lazy-loaded config()) so it's
+-- active before the first buffer is read, since lazy.nvim defers loading
+-- lazy=false plugins until VimEnter -- too late for a file opened via
+-- `nvim foo.dart` on the command line.
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "dart",
+  callback = function()
+    vim.bo.shiftwidth = 2
+    vim.bo.tabstop = 2
+    vim.bo.softtabstop = 2
+  end,
+})
+
 -- Open file tree automatically when starting Neovim on a directory
 vim.api.nvim_create_autocmd("VimEnter", {
   callback = function(data)

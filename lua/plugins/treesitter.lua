@@ -17,6 +17,7 @@ return {
       "json", "yaml", "toml",
       "markdown", "markdown_inline",
       "bash",
+      "dart",
     })
 
     -- Highlighting is no longer a nvim-treesitter "module"; start it per buffer.
@@ -31,7 +32,7 @@ return {
     vim.api.nvim_create_autocmd("FileType", {
       pattern = {
         "python", "lua", "vim", "c", "cpp", "cmake",
-        "json", "yaml", "toml", "markdown", "bash",
+        "json", "yaml", "toml", "markdown", "bash", "dart",
       },
       callback = function()
         vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
