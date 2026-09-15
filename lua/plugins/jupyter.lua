@@ -196,6 +196,60 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+-- jupytext.nvim claims BufReadCmd for *.ipynb, and Neovim hands off to it unconditionally —
+-- not only for files that already exist — so plain BufNewFile never actually fires for
+-- notebooks in this config. jupytext's own handler then unconditionally tries to read+parse
+-- the file's JSON metadata with no existence check, hard-erroring on a brand-new notebook.
+-- Also covers a zero-byte *existing* file (e.g. `touch foo.ipynb`, or nvim-tree's "new file"
+-- command, which creates an empty file on disk before opening it) — same crash, since an
+-- empty file isn't valid JSON either.
+-- Registered at the top level of this file (this module is `require`d while lazy.nvim is
+-- still collecting plugin specs, before any plugin's own `config`/`opts` setup runs), so this
+-- autocmd lands in the BufReadCmd list before jupytext.nvim's, and Neovim runs same-event
+-- autocmds in registration order — this materializes a minimal valid empty-notebook skeleton
+-- on disk first, so jupytext's handler then finds a normal, readable notebook.
+vim.api.nvim_create_autocmd("BufReadCmd", {
+  pattern = "*.ipynb",
+  callback = function(ev)
+    local path = vim.fn.fnamemodify(ev.match, ":p")
+    local stat = vim.uv.fs_stat(path)
+    if stat and stat.size > 0 then
+      return
+    end
+
+    -- Prefer the active venv/conda kernel if it's already registered with Jupyter;
+    -- otherwise fall back to the generic "python3" kernelspec name.
+    local kernel_name, display_name = "python3", "Python 3"
+    local venv = os.getenv("VIRTUAL_ENV") or os.getenv("CONDA_PREFIX")
+    if venv then
+      local base = venv_kernel_base_name(venv):gsub("[^%w_.-]", "_"):lower()
+      if vim.uv.fs_stat(jupyter_data_dir() .. "/kernels/" .. base .. "/kernel.json") then
+        kernel_name, display_name = base, base .. " (venv)"
+      end
+    end
+
+    local skeleton = {
+      "{",
+      ' "cells": [],',
+      ' "metadata": {',
+      '  "kernelspec": {',
+      '   "display_name": "' .. display_name .. '",',
+      '   "language": "python",',
+      '   "name": "' .. kernel_name .. '"',
+      "  },",
+      '  "language_info": {',
+      '   "name": "python"',
+      "  }",
+      " },",
+      ' "nbformat": 4,',
+      ' "nbformat_minor": 5',
+      "}",
+      "",
+    }
+    vim.fn.writefile(skeleton, path)
+  end,
+})
+
 vim.api.nvim_create_user_command("JupytextCleanup", function(cmd_opts)
   local dir = cmd_opts.args ~= "" and cmd_opts.args or vim.fn.expand("%:p:h")
   if dir == "" then

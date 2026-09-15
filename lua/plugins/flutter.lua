@@ -62,7 +62,7 @@ return {
           -- enable the built-in document_color API instead.
           on_attach = function(_client, bufnr)
             if vim.lsp.document_color then
-              vim.lsp.document_color.enable(true, bufnr)
+              vim.lsp.document_color.enable(true, { bufnr = bufnr })
             end
           end,
           capabilities = require("cmp_nvim_lsp").default_capabilities(),

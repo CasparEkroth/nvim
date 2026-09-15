@@ -11,6 +11,7 @@ vim.keymap.set("i", "jk", "<Esc>")
 vim.keymap.set("i", "JK", "<Esc>")
 
 -- Quality-of-life
+vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
 vim.keymap.set("n", "<leader>w", "<cmd>w<cr>", { desc = "Save file" })
 vim.keymap.set("n", "<leader>q", "<cmd>q<cr>", { desc = "Quit" })
 vim.keymap.set("n", "<C-h>", "<C-w>h", { desc = "Move to left split" })

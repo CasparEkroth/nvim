@@ -22,6 +22,18 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+-- Soft-wrap long lines so the full line stays visible on screen.
+-- Global wrap is off; enable it only for prose buffers (markdown, plain text).
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "markdown", "text" },
+  callback = function()
+    vim.opt_local.wrap = true
+    vim.opt_local.linebreak = true -- break on word boundaries, not mid-word
+    vim.opt_local.breakindent = true -- keep indent on wrapped continuation lines
+    vim.opt_local.showbreak = "↳ " -- visual marker for wrapped lines
+  end,
+})
+
 -- Open file tree automatically when starting Neovim on a directory
 vim.api.nvim_create_autocmd("VimEnter", {
   callback = function(data)
