@@ -18,6 +18,11 @@ vim.keymap.set("n", "<C-h>", "<C-w>h", { desc = "Move to left split" })
 vim.keymap.set("n", "<C-l>", "<C-w>l", { desc = "Move to right split" })
 vim.keymap.set("n", "<C-j>", "<C-w>j", { desc = "Move to split below" })
 vim.keymap.set("n", "<C-k>", "<C-w>k", { desc = "Move to split above" })
+
+-- Same window navigation from terminal mode (escape to normal, move, done)
+for _, k in ipairs({ "h", "j", "k", "l" }) do
+  vim.keymap.set("t", "<C-" .. k .. ">", "<C-\\><C-n><C-w>" .. k, { desc = "Move to split " .. k })
+end
 vim.keymap.set("n", "<leader>cs", function()
   require("lint").try_lint()
 end, { desc = "Run cspell lint" })

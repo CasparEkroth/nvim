@@ -60,6 +60,33 @@ vim.lsp.config["lua_ls"] = {
 }
 vim.lsp.enable("lua_ls")
 
+-- Robot Framework: completion, go-to-def, diagnostics for .robot/.resource files
+vim.lsp.config["robotcode"] = {
+  cmd = { "robotcode", "language-server" },
+  filetypes = { "robot", "resource" },
+  root_markers = { "robot.toml", "pyproject.toml", "Pipfile", ".git" },
+  capabilities = capabilities,
+}
+vim.lsp.enable("robotcode")
+
+-- Docker: completion, hover, diagnostics for Dockerfiles
+vim.lsp.config["dockerls"] = {
+  cmd = { "docker-langserver", "--stdio" },
+  filetypes = { "dockerfile" },
+  root_markers = { "Dockerfile", ".git" },
+  capabilities = capabilities,
+}
+vim.lsp.enable("dockerls")
+
+-- Docker Compose: completion, hover, diagnostics for compose files
+vim.lsp.config["docker_compose_language_service"] = {
+  cmd = { "docker-compose-langserver", "--stdio" },
+  filetypes = { "yaml.docker-compose" },
+  root_markers = { "docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml", ".git" },
+  capabilities = capabilities,
+}
+vim.lsp.enable("docker_compose_language_service")
+
 -- Keymaps when an LSP attaches to a buffer
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(ev)
