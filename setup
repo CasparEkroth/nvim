@@ -70,7 +70,8 @@ if PY="$(pick_python)"; then
     ipykernel \
     jupytext \
     nbformat \
-    pillow
+    pillow \
+    openpyxl
 
   # Register a default kernel so :MoltenInit has something to attach to
   "$VENV_PY" -m ipykernel install --user --name=nvim --display-name="Neovim (molten)" >/dev/null 2>&1 || true
@@ -101,3 +102,7 @@ echo "    jo open output, jh hide output, jr restart kernel."
 echo "  - Inline images need Kitty/Ghostty/WezTerm (Kitty graphics protocol)."
 echo "    Apple Terminal cannot render them; molten text output still works."
 echo "  - WSL: image.nvim is limited — install ueberzugpp under WSLg, or use text-only output."
+echo
+echo "Xlsx notes:"
+echo "  - Open .xlsx files normally; shown as a read-only aligned table (openpyxl, via the venv)."
+echo "  - ]s / [s cycle sheets. Editing/saving is not supported — use Excel/LibreOffice for that."
