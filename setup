@@ -56,11 +56,21 @@ pick_python() {
 }
 
 if PY="$(pick_python)"; then
-  if [[ ! -x "$NVIM_VENV/bin/python" && ! -x "$NVIM_VENV/Scripts/python.exe" ]]; then
+  # Ctrl-C during `python -m venv` can leave a half-created tree without a working pip.
+  venv_usable() {
+    [[ -x "$NVIM_VENV/bin/python" && -x "$NVIM_VENV/bin/pip" ]] \
+      || [[ -x "$NVIM_VENV/Scripts/python.exe" && -x "$NVIM_VENV/Scripts/pip.exe" ]]
+  }
+
+  if venv_usable; then
+    echo "Neovim Python venv already exists at $NVIM_VENV"
+  else
+    if [[ -e "$NVIM_VENV" ]]; then
+      echo "Removing incomplete venv at $NVIM_VENV"
+      rm -rf "$NVIM_VENV"
+    fi
     echo "Creating Neovim Python venv at $NVIM_VENV (interpreter: $PY)"
     "$PY" -m venv "$NVIM_VENV"
-  else
-    echo "Neovim Python venv already exists at $NVIM_VENV"
   fi
 
   if [[ -x "$NVIM_VENV/bin/python" ]]; then
@@ -71,7 +81,17 @@ if PY="$(pick_python)"; then
     VENV_PIP="$NVIM_VENV/Scripts/pip.exe"
   fi
 
-  "$VENV_PIP" install --upgrade pip >/dev/null
+  if ! venv_usable; then
+    echo "ERROR: venv exists but pip is missing at $NVIM_VENV" >&2
+    echo "  rm -rf \"$NVIM_VENV\" && re-run ./setup" >&2
+    exit 1
+  fi
+
+  # Keep pip output visible — first install often takes 1–3 minutes and looked "stuck"
+  # when redirected to /dev/null.
+  echo "Upgrading pip ..."
+  "$VENV_PIP" install --upgrade pip
+  echo "Installing Python host packages (pynvim, jupyter, jupytext, openpyxl, ...) ..."
   "$VENV_PIP" install --upgrade \
     pynvim \
     jupyter_client \
@@ -82,7 +102,8 @@ if PY="$(pick_python)"; then
     openpyxl
 
   # Register a default kernel so :MoltenInit has something to attach to
-  "$VENV_PY" -m ipykernel install --user --name=nvim --display-name="Neovim (molten)" >/dev/null 2>&1 || true
+  echo "Registering Jupyter kernel 'nvim' ..."
+  "$VENV_PY" -m ipykernel install --user --name=nvim --display-name="Neovim (molten)" || true
 
   echo "Python host packages installed for molten/jupytext."
   echo "  vim.g.python3_host_prog -> $VENV_PY"
@@ -112,5 +133,5 @@ echo "    Apple Terminal cannot render them; molten text output still works."
 echo "  - WSL: image.nvim is limited — install ueberzugpp under WSLg, or use text-only output."
 echo
 echo "Xlsx notes:"
-echo "  - Open .xlsx files normally; shown as a read-only aligned table (openpyxl, via the venv)."
-echo "  - ]s / [s cycle sheets. Editing/saving is not supported — use Excel/LibreOffice for that."
+echo "  - Open .xlsx files normally; shown as an aligned table (openpyxl, via the venv)."
+echo "  - ]s / [s cycle sheets. o/O rows, <leader>c/C columns, :w saves changed cells only."
