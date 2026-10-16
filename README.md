@@ -61,12 +61,19 @@ After the first open, if Molten’s remote plugin commands are missing, run:
 4. Creates a Python venv at `stdpath('data')/venv` and installs:
    `pynvim`, `jupyter_client`, `ipykernel`, `jupytext`, `nbformat`, `pillow`, `openpyxl`
 5. Registers a Jupyter kernel named `nvim`
-6. Warns if ImageMagick is missing
+6. Warns if ImageMagick is missing (skipped entirely if `--no-images` was used)
 
 Override the Python used for the venv with:
 
 ```bash
 MOLTEN_PYTHON=/path/to/python3.12 ./setup
+```
+
+On a host with no graphics (e.g. SSH-only), skip image.nvim entirely — this also skips
+its luarocks/hererocks build step:
+
+```bash
+./setup --no-images   # re-enable later with ./setup --images
 ```
 
 ## Features
@@ -160,7 +167,7 @@ Open `.ipynb` files normally; jupytext converts them to hydrogen-style Python (`
 | `<leader>jI` | Interrupt kernel |
 | `<leader>jx` | Clean stray jupytext `.py` sidecars |
 
-Inline plots need Kitty/Ghostty/WezTerm + ImageMagick. Apple Terminal shows text output only. On WSL, prefer ueberzugpp under WSLg or text-only output.
+Inline plots need Kitty/Ghostty/WezTerm + ImageMagick. Apple Terminal shows text output only. On WSL, prefer ueberzugpp under WSLg or text-only output. On SSH / headless hosts, run `./setup --no-images` to skip installing image.nvim altogether (molten falls back to text-only output).
 
 ### Xlsx
 

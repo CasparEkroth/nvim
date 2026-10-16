@@ -6,6 +6,14 @@ NVIM_CONFIG_DIR="$HOME/.config/nvim"
 NVIM_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nvim"
 NVIM_VENV="$NVIM_DATA_DIR/venv"
 NVIM_MIN="0.10"
+IMAGES=auto
+
+for arg in "$@"; do
+  case "$arg" in
+    --no-images) IMAGES=0 ;;
+    --images)    IMAGES=1 ;;
+  esac
+done
 
 # Colors only when writing to a terminal
 if [[ -t 1 ]]; then
@@ -31,6 +39,12 @@ echo "Neovim $nvim_ver OK."
 
 mkdir -p "$NVIM_CONFIG_DIR"
 mkdir -p "$NVIM_DATA_DIR"
+
+if [[ "$IMAGES" == 0 ]]; then
+  touch "$NVIM_DATA_DIR/no-images"
+elif [[ "$IMAGES" == 1 ]]; then
+  rm -f "$NVIM_DATA_DIR/no-images"
+fi
 
 # Sync the full modular config (preserves structure, removes stale files)
 rsync -a --delete \
@@ -128,10 +142,18 @@ else
 fi
 
 # ImageMagick is required by image.nvim (magick_cli processor) for plot rendering
-if ! command -v magick >/dev/null 2>&1 && ! command -v convert >/dev/null 2>&1; then
-  echo "${YELLOW}NOTE:${RESET} ImageMagick not found. Inline plot rendering needs it:"
-  echo "  macOS:  ${BOLD}brew install imagemagick${RESET}"
-  echo "  Ubuntu: ${BOLD}sudo apt install imagemagick${RESET}"
+if [[ -f "$NVIM_DATA_DIR/no-images" ]]; then
+  echo "Inline images: ${BOLD}disabled${RESET} (re-enable with ./setup --images)"
+else
+  if ! command -v magick >/dev/null 2>&1 && ! command -v convert >/dev/null 2>&1; then
+    echo "${YELLOW}NOTE:${RESET} ImageMagick not found. Inline plot rendering needs it:"
+    echo "  macOS:  ${BOLD}brew install imagemagick${RESET}"
+    echo "  Ubuntu: ${BOLD}sudo apt install imagemagick${RESET}"
+  fi
+  if [[ -n "${SSH_TTY:-}" ]]; then
+    echo "${YELLOW}NOTE:${RESET} you're on SSH, inline images can't render here."
+    echo "  Skip image.nvim with: ${BOLD}./setup --no-images${RESET}"
+  fi
 fi
 
 # lazy.nvim's luarocks support builds Lua 5.1 from source (hererocks), which

@@ -307,6 +307,11 @@ return {
     -- silently breaks image rendering while still reporting itself as configured.
     version = "1.5.1",
     lazy = true,
+    -- Skip install/build entirely (including the luarocks/hererocks build step) when
+    -- `./setup --no-images` dropped the marker file, e.g. on SSH/non-graphics hosts.
+    enabled = function()
+      return vim.fn.filereadable(vim.fn.stdpath("data") .. "/no-images") == 0
+    end,
     dependencies = { "nvim-lua/plenary.nvim" },
     config = function()
       -- pcall: image.nvim hard-errors in headless / non-graphics terminals (no TIOCGWINSZ).
@@ -367,8 +372,8 @@ return {
         vim.g.python3_host_prog = py
       end
 
-      -- Start with no image provider; image.nvim config upgrades this on successful setup.
-      -- (If we set "image.nvim" here and setup later fails, molten aborts cell runs.)
+      -- Start with no image provider; image.nvim's own config upgrades this on successful
+      -- setup. When --no-images disabled the plugin, it never loads, so this "none" sticks.
       vim.g.molten_image_provider = "none"
       vim.g.molten_output_win_max_height = 20
       vim.g.molten_auto_open_output = true
