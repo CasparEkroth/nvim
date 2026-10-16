@@ -9,6 +9,14 @@ NVIM_VENV="$NVIM_DATA_DIR/venv"
 mkdir -p "$NVIM_CONFIG_DIR"
 mkdir -p "$NVIM_DATA_DIR"
 
+if command -v nvim >/dev/null 2>&1; then
+    echo "Neovim is installed."
+else
+    echo "Neovim is not installed." >&2
+    echo "install neovim." >&2
+    exit 1
+fi
+
 # Sync the full modular config (preserves structure, removes stale files)
 rsync -a --delete \
   --exclude '.git' \
