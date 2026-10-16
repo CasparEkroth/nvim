@@ -9,3 +9,5 @@ require("config.keymaps")
 require("config.lazy")
 require("config.lsp")
 require("config.autocmds")
+
+vim.uv = vim.uv or vim.loop

@@ -5,17 +5,25 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NVIM_CONFIG_DIR="$HOME/.config/nvim"
 NVIM_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/nvim"
 NVIM_VENV="$NVIM_DATA_DIR/venv"
+NVIM_MIN="0.10"
+
+if ! command -v nvim >/dev/null 2>&1; then
+    echo "Neovim is not installed (need >= $NVIM_MIN)." >&2
+    exit 1
+fi
+
+nvim_ver="$(nvim --version | sed -n '1s/.*v\([0-9]*\.[0-9]*\).*/\1/p' || true)"
+if [[ -z "$nvim_ver" ]] || [[ "$(printf '%s\n%s\n' "$NVIM_MIN" "$nvim_ver" | sort -V | head -n1)" != "$NVIM_MIN" ]]; then
+    echo "Neovim >= $NVIM_MIN required, found: ${nvim_ver:-unknown} ($(command -v nvim))" >&2
+    echo "  Linux: grab the tarball from https://github.com/neovim/neovim/releases/latest" >&2
+    echo "         (apt is too old), symlink it to /usr/local/bin/nvim" >&2
+    echo "  macOS: brew install neovim" >&2
+    exit 1
+fi
+echo "Neovim $nvim_ver OK."
 
 mkdir -p "$NVIM_CONFIG_DIR"
 mkdir -p "$NVIM_DATA_DIR"
-
-if command -v nvim >/dev/null 2>&1; then
-    echo "Neovim is installed."
-else
-    echo "Neovim is not installed." >&2
-    echo "install neovim." >&2
-    exit 1
-fi
 
 # Sync the full modular config (preserves structure, removes stale files)
 rsync -a --delete \
